@@ -110,22 +110,23 @@ def validate_and_get_format(filename: str, content: bytes) -> str:
         try:
             json.loads(content.decode('utf-8'))
             return 'JSON'
-        except:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return None
     
     elif filename_lower.endswith('.csv'):
         try:
             content_str = content.decode('utf-8')
-            csv.reader(StringIO(content_str))
+            # Actually parse the CSV to validate it
+            list(csv.reader(StringIO(content_str), delimiter=','))
             return 'CSV'
-        except:
+        except (csv.Error, UnicodeDecodeError):
             return None
     
     elif filename_lower.endswith('.xml'):
         try:
             ET.fromstring(content.decode('utf-8'))
             return 'XML'
-        except:
+        except (ET.ParseError, UnicodeDecodeError):
             return None
     
     return None
@@ -145,10 +146,11 @@ def upload_to_blob_storage(connection_string: str, filename: str,
         container_name = "uploads"
         
         # Create container if it doesn't exist
+        from azure.core.exceptions import ResourceExistsError
         try:
             container_client = blob_service_client.get_container_client(container_name)
             container_client.create_container()
-        except:
+        except ResourceExistsError:
             # Container already exists
             pass
         
@@ -186,9 +188,10 @@ def store_metadata(connection_string: str, filename: str,
         table_name = "uploadmetadata"
         
         # Create table if it doesn't exist
+        from azure.core.exceptions import ResourceExistsError
         try:
             table_client = table_service_client.create_table(table_name)
-        except:
+        except ResourceExistsError:
             # Table already exists
             table_client = table_service_client.get_table_client(table_name)
         

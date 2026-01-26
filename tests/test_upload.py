@@ -1,6 +1,6 @@
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from UploadFunction import main, validate_and_get_format
 import azure.functions as func
 
